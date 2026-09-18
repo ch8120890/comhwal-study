@@ -30,6 +30,90 @@
 .cal-dot{width:8px;height:8px;border-radius:50%}.cal-dot.hana{background:var(--hana)}.cal-dot.hyung{background:var(--hyung)}
 .legend{display:flex;gap:14px;font-size:12px;color:var(--soft);margin:8px 0 14px}.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
 .day-detail{margin-top:12px;border-top:1px solid var(--border);padding-top:12px}.person-detail{border-left:4px solid var(--border);padding:9px 10px;margin:8px 0;background:#F7F8FA;border-radius:8px}.person-detail.hana{border-left-color:var(--hana)}.person-detail.hyung{border-left-color:var(--hyung)}
+
+/* v8: cleaner study dashboard */
+.today .row{align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.today .row:last-child{border-bottom:0}
+.study-kind{width:68px;flex:0 0 68px;font-size:12px;color:var(--muted);font-weight:700}
+.study-main{flex:1;min-width:0;font-size:14px;font-weight:800}
+.study-main .sub{margin-top:3px;font-weight:500}
+.mini-action{flex:0 0 auto;margin-left:8px}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.summary-box{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--card2,rgba(255,255,255,.025))}
+.summary-box .num{font-size:22px;font-weight:900;margin-top:5px}
+.daily-section{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:14px}
+.daily-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;font-weight:800}
+.daily-tag{font-size:11px;color:var(--muted);font-weight:700}
+.daily-item{padding:10px 0;border-top:1px solid var(--line)}
+.daily-item:first-of-type{border-top:0}
+.daily-actions{margin-top:7px;display:flex;gap:6px}
+
+/* v9: today's study alignment */
+.today{overflow:hidden}
+.today>.date{margin-bottom:4px}
+.today>b{display:block;margin-bottom:10px}
+.today .row{
+  display:grid !important;
+  grid-template-columns:72px minmax(0,1fr) 72px;
+  gap:10px;
+  align-items:center !important;
+  min-height:58px;
+  padding:11px 0 !important;
+}
+.today .study-kind{
+  width:auto !important;
+  min-width:0;
+  font-size:12px;
+  line-height:1.3;
+  white-space:nowrap;
+}
+.today .study-main{
+  min-width:0;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+.today .mini-action{
+  width:72px;
+  min-width:72px;
+  height:34px;
+  margin:0 !important;
+  padding:0 7px !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:9px;
+  white-space:nowrap;
+}
+.today .study-main .btn{
+  min-height:27px;
+  padding:3px 8px !important;
+  margin-left:5px !important;
+  vertical-align:middle;
+}
+@media(max-width:390px){
+ .today .row{grid-template-columns:62px minmax(0,1fr) 66px;gap:7px}
+ .today .mini-action{width:66px;min-width:66px;font-size:11px}
+ .today .study-kind{font-size:11px}
+ .today .study-main{font-size:13px}
+}
+
+/* v10: compact card rows + visible saved values */
+.today .row{
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.035) !important;
+  border-radius:11px;
+  padding:10px 9px !important;
+  margin:7px 0;
+  min-height:54px;
+  grid-template-columns:72px minmax(0,1fr) 72px !important;
+}
+.today .study-kind{color:#f3f6fb !important;font-weight:850 !important}
+.today .study-main{color:#ffffff !important;font-weight:800 !important}
+.today .study-main .record-detail{color:#f4f7fb !important;font-weight:750}
+.today .study-main .empty-detail{color:#aeb7c5 !important;font-weight:500}
+.today .record-actions{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle}
+.today .record-actions .btn{margin:0 !important;padding:3px 7px !important;font-size:11px;min-height:26px}
+.today .record-actions .delete-btn{opacity:.82}
 </style>
 </head>
 <body><div id="app"></div>
@@ -51,17 +135,23 @@ const mins=(u,d=today())=>(state.minutes.find(x=>x.u===u&&x.d===d)||{}).m||0;
 const readings=u=>state.readings.filter(x=>x.u===u);
 const exams=u=>state.exams.filter(x=>x.u===u);
 const wrongs=u=>state.wrongs.filter(x=>x.u===u);
-const studyDates=u=>new Set([...readings(u).map(x=>x.d),...exams(u).map(x=>x.d)]);
+const studyDates=u=>new Set([...readings(u).map(x=>x.d),...exams(u).map(x=>x.d),...wrongs(u).map(x=>x.d),...state.minutes.filter(x=>x.u===u&&x.m>0).map(x=>x.d)]);
 function dday(u){let s=state.settings[u].examDate;if(!s)return '시험일 미설정';let a=new Date(today()),b=new Date(s),n=Math.round((b-a)/864e5);return n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n)}
 function week(u){let now=new Date(),day=now.getDay()||7,mon=new Date(now);mon.setDate(now.getDate()-day+1);let ds=[];for(let i=0;i<7;i++){let d=new Date(mon);d.setDate(mon.getDate()+i);ds.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`)}let set=studyDates(u),done=ds.filter(d=>set.has(d)).length,goal=state.settings[u].weeklyGoal||4,mm=ds.reduce((s,d)=>s+mins(u,d),0);return{done,goal,pct:Math.round(done/goal*100),mm}}
 function home(u){
  let w=week(u),r=readings(u),e=exams(u),wr=wrongs(u),rt=r.reduce((s,x)=>s+x.count,0),latest=e[e.length-1],rate=latest?Math.round(latest.correct/latest.total*1000)/10:'-';
+ let todayR=state.readings.map((x,i)=>({...x,_i:i})).filter(x=>x.u===u&&x.d===today());
+ let todayE=state.exams.map((x,i)=>({...x,_i:i})).filter(x=>x.u===u&&x.d===today());
+ let todayW=state.wrongs.map((x,i)=>({...x,_i:i})).filter(x=>x.u===u&&x.d===today());
+ let mx=state.minutes.findIndex(x=>x.u===u&&x.d===today()), tm=mx>=0?state.minutes[mx]:null;
+ let inline=(html)=>html||'<span class="sub">아직 기록 없음</span>';
  return `<div class="top"><div class="meta">컴활 1급 · 필기</div><h1>${names[u]} <span style="float:right;font-size:13px">${dday(u)}</span></h1></div><div class="content">
- <div class="card today"><div class="date">${today()}</div><b>오늘의 공부</b><div class="minutes">${fmt(mins(u))}</div>
- <div class="row"><span>필기 요약본 회독</span><button class="btn" onclick="openM('reading')">+ 기록</button></div>
- <div class="row"><span>기출</span><button class="btn" onclick="openM('exam')">+ 기록</button></div>
- <div class="row"><span>오답</span><button class="btn" onclick="openM('wrong')">+ 등록</button></div>
- <div class="row"><span>오늘 총 공부시간</span><button class="btn" onclick="openM('minutes')">시간 설정</button></div></div>
+ <div class="card today"><div class="date">${today()}</div><b>오늘의 공부</b>
+ <div class="row"><span class="study-kind">필기 회독</span><span class="study-main">${todayR.length?todayR.map(x=>`<span class="record-detail">${x.count}회독</span><span class="record-actions"><button class="btn outline" onclick="editRecord('reading',${x._i})">수정</button><button class="btn outline delete-btn" data-delete-type="reading" data-delete-index="${x._i}">삭제</button></span>`).join('<br>'):'<span class="empty-detail">아직 기록 없음</span>'}</span><button class="btn mini-action" onclick="openM('reading')">+ 기록</button></div>
+ <div class="row"><span class="study-kind">기출</span><span class="study-main">${todayE.length?todayE.map(x=>{let wc=x.wrongCount??(x.total-x.correct),pct=x.total?((x.correct/x.total)*100).toFixed(1):0;return `<span class="record-detail">${x.year}년 ${x.round}회 · ${x.correct}/${x.total} · ${pct}%</span><span class="record-actions"><button class="btn outline" onclick="editRecord('exam',${x._i})">수정</button><button class="btn outline delete-btn" data-delete-type="exam" data-delete-index="${x._i}">삭제</button></span>`}).join('<br>'):'<span class="empty-detail">아직 기록 없음</span>'}</span><button class="btn mini-action" onclick="openM('exam')">+ 기록</button></div>
+ <div class="row"><span class="study-kind">오답</span><span class="study-main">${todayW.length?todayW.map(x=>`<span class="record-detail">${escapeHtml(x.question||'문제')}번${x.subject?' · '+escapeHtml(x.subject):''}</span><span class="record-actions"><button class="btn outline" onclick="editRecord('wrong',${x._i})">수정</button><button class="btn outline delete-btn" data-delete-type="wrong" data-delete-index="${x._i}">삭제</button></span>`).join('<br>'):'<span class="empty-detail">아직 기록 없음</span>'}</span><button class="btn mini-action" onclick="openM('wrong')">+ 등록</button></div>
+ <div class="row"><span class="study-kind">공부시간</span><span class="study-main">${tm?`<span class="record-detail">${fmt(tm.m)}</span><span class="record-actions"><button class="btn outline" onclick="editRecord('minutes',${mx})">수정</button><button class="btn outline delete-btn" data-delete-type="minutes" data-delete-index="${mx}">삭제</button></span>`:'<span class="empty-detail">선택 입력</span>'}</span><button class="btn mini-action" onclick="openM('minutes')">${tm?'변경':'+ 기록'}</button></div>
+ </div>
  <div class="card"><div class="title">이번 주 목표 · 매주 변경 가능</div>
  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
    <div style="font-size:22px;font-weight:800">${w.done} / ${w.goal}회</div>
@@ -69,13 +159,70 @@ function home(u){
  </div>
  <div class="progress" style="margin-top:10px"><div class="fill" style="width:${Math.min(100,w.pct)}%"></div></div>
  <div class="sub" style="margin-top:8px">달성률 ${w.pct}% · 이번 주 ${fmt(w.mm)}</div></div>
- <div class="card"><div class="title">누적 현황</div><div class="grid">
- <div class="stat"><span class="sub">요약본 누적</span><strong>${rt}회독</strong></div><div class="stat"><span class="sub">최근 기출</span><strong>${rate}${rate==='-'?'':'%'}</strong></div>
- <div class="stat"><span class="sub">오답</span><strong>${wr.length}개</strong></div><div class="stat"><span class="sub">누적 공부시간</span><strong>${fmt(state.minutes.filter(x=>x.u===u).reduce((s,x)=>s+x.m,0))}</strong></div></div></div>
- <div class="card"><div class="title">설정</div><div class="field"><label>필기 시험일</label><input type="date" id="examDate" value="${state.settings[u].examDate||''}"></div><div class="field"><label>이번 주 공부 목표 횟수</label><input type="number" id="goal" min="1" max="7" value="${state.settings[u].weeklyGoal||4}"></div><button class="btn primary" onclick="saveSettings()">설정 저장</button></div>
+ <div class="card"><div class="title">누적 현황</div>
+ <div class="summary-grid">
+  <div class="summary-box"><div class="sub">요약본 회독</div><div class="num">${rt}회</div></div>
+  <div class="summary-box"><div class="sub">기출 풀이</div><div class="num">${e.length}회</div></div>
+  <div class="summary-box"><div class="sub">오답 등록</div><div class="num">${wr.length}개</div></div>
+  <div class="summary-box"><div class="sub">최근 정답률</div><div class="num">${rate}${rate==='-'?'':'%'}</div></div>
+ </div></div>
+ ${personalDailyHtml(u)}
  </div>`;
 }
-
+function personalDailyHtml(u){
+ let dates=[...studyDates(u)].sort().reverse(), d=selectedPersonalDate&&dates.includes(selectedPersonalDate)?selectedPersonalDate:(dates[0]||today());
+ let items=personalDayItems(u,d);
+ return `<div class="card"><div class="title">일자별 학습기록</div>
+ <div class="capture-note">오늘 등록한 내용도 저장 즉시 여기에서 확인할 수 있어요. 기록은 수정하거나 삭제할 수 있습니다.</div>
+ <div class="field"><label>날짜 선택</label><select onchange="selectPersonalDate(this.value)">${dates.length?dates.map(x=>`<option value="${x}" ${x===d?'selected':''}>${x}</option>`).join(''):`<option value="${today()}">${today()}</option>`}</select></div>
+ <div>${items.length?items.join(''):'<div class="empty">이 날짜에는 아직 학습 기록이 없어요.</div>'}</div></div>`;
+}
+let selectedPersonalDate=null;
+function personalDayItems(u,d){
+ let groups={reading:[],exam:[],wrong:[],minutes:[]};
+ state.readings.forEach((x,i)=>{if(x.u===u&&x.d===d)groups.reading.push(`<div class="daily-item"><b>${x.count}회독</b><div class="daily-actions"><button class="btn outline" onclick="editRecord('reading',${i})">수정</button><button class="btn outline" data-delete-type="reading" data-delete-index="${i}">삭제</button></div></div>`)});
+ state.exams.forEach((x,i)=>{if(x.u===u&&x.d===d){let wc=x.wrongCount??(x.total-x.correct),pct=x.total?((x.correct/x.total)*100).toFixed(1):0;groups.exam.push(`<div class="daily-item"><b>${x.year}년 ${x.round}회</b><div class="sub">${x.total}문제 · 오답 ${wc}개 · 정답률 ${pct}%</div><div class="daily-actions"><button class="btn outline" onclick="editRecord('exam',${i})">수정</button><button class="btn outline" data-delete-type="exam" data-delete-index="${i}">삭제</button></div></div>`)}}); 
+ state.wrongs.forEach((x,i)=>{if(x.u===u&&x.d===d)groups.wrong.push(`<div class="daily-item"><b>${escapeHtml(x.question||'문제')}번</b><div class="sub">${escapeHtml(x.subject||'')}${x.memo?' · '+escapeHtml(x.memo):''}</div><div class="daily-actions"><button class="btn outline" onclick="editRecord('wrong',${i})">수정</button><button class="btn outline" data-delete-type="wrong" data-delete-index="${i}">삭제</button></div></div>`)});
+ state.minutes.forEach((x,i)=>{if(x.u===u&&x.d===d&&x.m>0)groups.minutes.push(`<div class="daily-item"><b>${fmt(x.m)}</b><div class="daily-actions"><button class="btn outline" onclick="editRecord('minutes',${i})">수정</button><button class="btn outline" data-delete-type="minutes" data-delete-index="${i}">삭제</button></div></div>`)});
+ let section=(title,tag,arr)=>arr.length?`<div class="daily-section"><div class="daily-head"><span>${title}</span><span class="daily-tag">${tag}</span></div>${arr.join('')}</div>`:'';
+ let html=section('필기 요약본','회독',groups.reading)+section('기출문제','기출',groups.exam)+section('오답노트','복습',groups.wrong)+section('공부시간','선택',groups.minutes);
+ return html?[html]:[];
+}
+window.selectPersonalDate=d=>{selectedPersonalDate=d;render()}
+window.askDeleteRecord=(type,i)=>{
+ const map={reading:'readings',exam:'exams',wrong:'wrongs',minutes:'minutes'};
+ const key=map[type], idx=Number(i);
+ if(!key || !Array.isArray(state[key]) || !Number.isInteger(idx) || idx<0 || idx>=state[key].length) return;
+ modal=`<div class="modal"><div class="sheet"><h3>기록 삭제</h3>
+ <div class="capture-note">등록한 이 학습 기록을 완전히 삭제할까요?</div>
+ <button class="btn primary" style="width:100%;margin-top:14px" id="confirmDeleteBtn" data-confirm-delete-type="${type}" data-confirm-delete-index="${idx}">삭제하기</button>
+ <button class="btn outline" style="width:100%;margin-top:8px" onclick="closeM()">취소</button></div></div>`;
+ render();
+}
+window.performDeleteRecord=(type,i)=>{
+ const map={reading:'readings',exam:'exams',wrong:'wrongs',minutes:'minutes'};
+ const key=map[type], idx=Number(i);
+ if(!key || !Array.isArray(state[key]) || !Number.isInteger(idx) || idx<0 || idx>=state[key].length) return;
+ state[key].splice(idx,1);
+ modal=null;
+ save();
+ render();
+}
+window.editRecord=(type,i)=>{
+ let x,body='';
+ if(type==='reading'){x=state.readings[i];body=`<h3>회독 기록 수정</h3><div class="field"><label>날짜</label><input id="ed" type="date" value="${x.d}"></div><div class="field"><label>회독 횟수</label><input id="ecount" type="number" min="1" value="${x.count}"></div>`}
+ if(type==='exam'){x=state.exams[i];body=`<h3>기출 기록 수정</h3><div class="field"><label>날짜</label><input id="ed" type="date" value="${x.d}"></div><div class="field"><label>연도</label><input id="eyear" type="number" value="${x.year}"></div><div class="field"><label>회차</label><input id="eround" type="number" value="${x.round}"></div><div class="field"><label>총 문제 수</label><input id="etotal" type="number" value="${x.total}"></div><div class="field"><label>오답 개수</label><input id="ewrong" type="number" min="0" value="${x.wrongCount??(x.total-x.correct)}"></div>`}
+ if(type==='wrong'){x=state.wrongs[i];body=`<h3>오답 기록 수정</h3><div class="field"><label>날짜</label><input id="ed" type="date" value="${x.d}"></div><div class="field"><label>문제번호</label><input id="eq" value="${escapeHtml(x.question||'')}"></div><div class="field"><label>과목</label><input id="esubj" value="${escapeHtml(x.subject||'')}"></div><div class="field"><label>메모</label><textarea id="ememo">${escapeHtml(x.memo||'')}</textarea></div>`}
+ if(type==='minutes'){x=state.minutes[i];body=`<h3>공부시간 수정 <span class="sub">(선택)</span></h3><div class="field"><label>날짜</label><input id="ed" type="date" value="${x.d}"></div><div class="field"><label>공부한 시간(분)</label><input id="emm" type="number" min="0" value="${x.m}"></div>`}
+ modal=`<div class="modal" onclick="if(event.target===this)closeM()"><div class="sheet">${body}<button class="btn primary" onclick="saveEdit('${type}',${i})">수정 저장</button><button class="btn outline" style="width:100%;margin-top:8px" onclick="closeM()">취소</button></div></div>`;render()
+}
+window.saveEdit=(type,i)=>{
+ if(type==='reading'){let x=state.readings[i];x.d=document.getElementById('ed').value;x.count=Math.max(1,+document.getElementById('ecount').value||1)}
+ if(type==='exam'){let x=state.exams[i],total=Math.max(1,+document.getElementById('etotal').value||1),wc=Math.max(0,+document.getElementById('ewrong').value||0);wc=Math.min(total,wc);x.d=document.getElementById('ed').value;x.year=+document.getElementById('eyear').value;x.round=+document.getElementById('eround').value;x.total=total;x.wrongCount=wc;x.correct=total-wc}
+ if(type==='wrong'){let x=state.wrongs[i];x.d=document.getElementById('ed').value;x.question=document.getElementById('eq').value;x.subject=document.getElementById('esubj').value;x.memo=document.getElementById('ememo').value}
+ if(type==='minutes'){let x=state.minutes[i];x.d=document.getElementById('ed').value;x.m=Math.max(0,+document.getElementById('emm').value||0)}
+ save();closeM()
+}
 function hasStudy(u,d){return readings(u).some(x=>x.d===d)||exams(u).some(x=>x.d===d)||wrongs(u).some(x=>x.d===d)||mins(u,d)>0}
 function daySummary(u,d){
  let rr=readings(u).filter(x=>x.d===d).reduce((a,x)=>a+x.count,0);
@@ -114,7 +261,7 @@ function together(){
  let msgs=state.messages.slice().reverse();
  return `<div class="top"><div class="meta">컴활 1급</div><h1>우리의 합격 프로젝트</h1></div><div class="content">
  ${calendarHtml()}
- <div class="card"><div class="title">이번 주 비교</div><div class="row"><b>유하나</b><span>${a.done}/${a.goal}회 · ${fmt(a.mm)}</span></div><div class="row"><b>박형용</b><span>${b.done}/${b.goal}회 · ${fmt(b.mm)}</span></div></div>
+ <div class="card"><div class="title">이번 주 함께 달린 기록</div><div class="row"><b>유하나</b><span>${a.done}/${a.goal}회 · ${fmt(a.mm)}</span></div><div class="row"><b>박형용</b><span>${b.done}/${b.goal}회 · ${fmt(b.mm)}</span></div></div>
  <div class="card"><div class="title">누적 기록</div><div class="row"><b>유하나</b><span>요약본 ${readings('hana').reduce((s,x)=>s+x.count,0)}회독 · 기출 ${exams('hana').length} · 오답 ${wrongs('hana').length}</span></div><div class="row"><b>박형용</b><span>요약본 ${readings('hyung').reduce((s,x)=>s+x.count,0)}회독 · 기출 ${exams('hyung').length} · 오답 ${wrongs('hyung').length}</span></div></div>
  <div class="card"><div class="title">서로 힘내라고 한마디</div>
  <div class="field"><label>작성자</label><select id="msgAuthor"><option value="hana">유하나</option><option value="hyung">박형용</option></select></div>
@@ -131,13 +278,13 @@ window.openM=t=>{if(tab==='together')return;let body='';
  if(t==='reading')body=`<h3>필기 요약본 회독</h3><div class="capture-note">20페이지 요약본을 오늘 몇 회독했는지만 기록해요.</div><div class="field"><label>오늘 회독 횟수</label><input id="count" type="number" min="1" value="1"></div><button class="btn primary" onclick="saveReading()">저장</button>`;
  if(t==='exam')body=`<h3>기출 기록</h3><div class="field"><label>연도</label><input id="year" type="number" value="${new Date().getFullYear()-2}"></div><div class="field"><label>회차</label><input id="round" type="number" value="1"></div><div class="field"><label>총 문제 수</label><input id="total" type="number" value="60"></div><div class="field"><label>오답 개수</label><input id="wrongCount" type="number" min="0" value="0"></div><div class="capture-note">저장하면 정답 수와 정답률을 자동 계산하고, 오답이 있으면 바로 오답노트 등록 화면으로 넘어가요.</div><button class="btn primary" onclick="saveExam()">저장하고 다음</button>`;
  if(t==='wrong')body=`<h3>오답 등록</h3><div class="field"><label>문제번호</label><input id="q" placeholder="예: 12"></div><div class="field"><label>과목</label><select id="wsubj">${subjects.slice(1).map(s=>`<option>${s}</option>`).join('')}</select></div><div class="field"><label>메모</label><textarea id="memo"></textarea></div><button class="btn primary" onclick="saveWrong()">직접 입력해서 저장</button><button class="btn outline" style="width:100%;margin-top:8px" onclick="openCapture()">📷 오답 캡처로 등록</button>`;
- if(t==='minutes')body=`<h3>공부시간 설정</h3><div class="field"><label>분</label><input id="mm" type="number" min="0" value="${mins(tab)}"></div><button class="btn primary" onclick="saveMinutes()">저장</button>`;
+ if(t==='minutes')body=`<h3>공부시간 기록 <span class="sub">(선택)</span></h3><div class="capture-note">공부시간은 입력하지 않아도 학습 기록을 저장할 수 있어요.</div><div class="field"><label>공부한 시간(분)</label><input id="mm" type="number" min="0" value="${mins(tab)}"></div><button class="btn primary" onclick="saveMinutes()">저장</button>`;
  modal=`<div class="modal" onclick="if(event.target===this)closeM()"><div class="sheet">${body}<button class="btn outline" style="width:100%;margin-top:8px" onclick="closeM()">닫기</button></div></div>`;render()}
 window.closeM=()=>{modal=null;render()}
-window.saveReading=()=>{state.readings.push({u:tab,d:today(),subject:'필기 요약본',count:+document.getElementById('count').value||1});save();closeM()}
-window.saveExam=()=>{let total=+document.getElementById('total').value||60,wc=Math.max(0,+document.getElementById('wrongCount').value||0);wc=Math.min(total,wc);let correct=total-wc,year=+document.getElementById('year').value,round=+document.getElementById('round').value;state.exams.push({u:tab,d:today(),year,round,total,correct,wrongCount:wc});save();if(wc>0){openWrongAfterExam(year,round,wc)}else{closeM()}}
-window.saveWrong=()=>{state.wrongs.push({u:tab,d:today(),question:document.getElementById('q').value,subject:document.getElementById('wsubj').value,memo:document.getElementById('memo').value});save();closeM()}
-window.saveMinutes=()=>{let x=state.minutes.find(x=>x.u===tab&&x.d===today()),m=Math.max(0,+document.getElementById('mm').value||0);x?x.m=m:state.minutes.push({u:tab,d:today(),m});save();closeM()}
+window.saveReading=()=>{selectedPersonalDate=today();state.readings.push({u:tab,d:today(),subject:'필기 요약본',count:+document.getElementById('count').value||1});save();closeM()}
+window.saveExam=()=>{selectedPersonalDate=today();let total=+document.getElementById('total').value||60,wc=Math.max(0,+document.getElementById('wrongCount').value||0);wc=Math.min(total,wc);let correct=total-wc,year=+document.getElementById('year').value,round=+document.getElementById('round').value;state.exams.push({u:tab,d:today(),year,round,total,correct,wrongCount:wc});save();if(wc>0){openWrongAfterExam(year,round,wc)}else{closeM()}}
+window.saveWrong=()=>{selectedPersonalDate=today();state.wrongs.push({u:tab,d:today(),question:document.getElementById('q').value,subject:document.getElementById('wsubj').value,memo:document.getElementById('memo').value});save();closeM()}
+window.saveMinutes=()=>{selectedPersonalDate=today();let x=state.minutes.find(x=>x.u===tab&&x.d===today()),m=Math.max(0,+document.getElementById('mm').value||0);x?x.m=m:state.minutes.push({u:tab,d:today(),m});save();closeM()}
 window.saveSettings=()=>{state.settings[tab].examDate=document.getElementById('examDate').value;state.settings[tab].weeklyGoal=Math.max(1,Math.min(7,+document.getElementById('goal').value||4));save();render()}
 
 
@@ -211,6 +358,21 @@ window.importAnalysis=()=>{
  items.forEach(x=>state.wrongs.push({u:tab,d:today(),question:x.question,subject:x.subject,reason:x.reason,concept:x.concept,memo:x.memo}));
  save();alert(items.length+'개의 오답을 등록했어요.');closeM()
 }
+document.addEventListener('click',function(e){
+ const del=e.target.closest('[data-delete-type]');
+ if(del){
+   e.preventDefault();
+   e.stopPropagation();
+   askDeleteRecord(del.dataset.deleteType, Number(del.dataset.deleteIndex));
+   return;
+ }
+ const ok=e.target.closest('[data-confirm-delete-type]');
+ if(ok){
+   e.preventDefault();
+   e.stopPropagation();
+   performDeleteRecord(ok.dataset.confirmDeleteType, Number(ok.dataset.confirmDeleteIndex));
+ }
+});
 render();
 })();
 </script></body></html>

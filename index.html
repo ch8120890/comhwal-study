@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>컴활 1급 커플 합격 프로젝트</title>
+<style>
+:root{--bg:#F1F2F5;--card:#fff;--dark:#20242C;--text:#1B1E24;--soft:#6B7280;--border:#E5E7EB;--hana:#E1604A;--hyung:#2E8B80;--num:#F2B84B;--green:#2E9E6D}
+*{box-sizing:border-box}html,body{margin:0}body{background:#D9DBE0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;color:var(--text)}
+#app{max-width:480px;margin:auto;min-height:100vh;background:var(--bg);padding-bottom:74px}.top{padding:20px 16px 12px}.meta{font-size:12px;color:var(--soft)}h1{font-size:22px;margin:6px 0}
+.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);max-width:480px;width:100%;display:flex;background:#fff;border-top:1px solid var(--border);padding:8px}.tabs button{flex:1;border:0;background:none;padding:12px;font-weight:700;color:#9CA3AF}.tabs button.on{color:var(--text)}
+.content{padding:0 16px 24px}.card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}.today{background:var(--dark);color:#fff;border:0;padding:20px}.date,.label,.sub{font-size:13px;color:#9AA1AE}.minutes{font-size:38px;font-weight:800;color:var(--num);margin:8px 0 14px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #eee}.today .row{border:0;background:rgba(255,255,255,.06);border-radius:10px;padding:12px;margin:8px 0}.row b{font-size:14px}.btn{border:0;border-radius:10px;padding:12px 14px;font-weight:700}.today .btn{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35);padding:7px 11px}.primary{background:#1B1E24;color:#fff;width:100%;font-size:15px}.outline{background:#fff;border:1px solid var(--border)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#F7F8FA;border-radius:10px;padding:12px}.stat strong{display:block;font-size:20px;margin-top:4px}.title{font-size:14px;font-weight:800;color:var(--soft);margin-bottom:10px}
+.progress{height:8px;background:#EBEDF1;border-radius:99px;overflow:hidden}.fill{height:100%;background:var(--num)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;z-index:20}.sheet{max-width:480px;width:100%;margin:auto;background:var(--bg);border-radius:20px 20px 0 0;padding:20px;max-height:88vh;overflow:auto}.field{margin:12px 0}.field label{display:block;font-size:13px;font-weight:700;color:var(--soft);margin-bottom:7px}.field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:15px}.actions{display:flex;gap:8px}.actions .btn{flex:1}.empty{text-align:center;color:#9CA3AF;padding:30px}
+</style>
+</head>
+<body><div id="app"></div>
+<script>
+(()=>{
+const KEY='cal1_couple_app_v1';
+const names={hana:'유하나',hyung:'박형용'};
+const subjects=['전체','컴퓨터 일반','스프레드시트 일반','데이터베이스 일반'];
+let state=JSON.parse(localStorage.getItem(KEY)||'null')||{settings:{hana:{examDate:'',weeklyGoal:4},hyung:{examDate:'',weeklyGoal:4}},readings:[],exams:[],wrongs:[],minutes:[]};
+let tab='hana', modal=null;
+const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
+const pad=n=>String(n).padStart(2,'0');
+const today=()=>{let d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const fmt=m=>m<60?m+'분':Math.floor(m/60)+'시간'+(m%60?' '+m%60+'분':'');
+const mins=(u,d=today())=>(state.minutes.find(x=>x.u===u&&x.d===d)||{}).m||0;
+const readings=u=>state.readings.filter(x=>x.u===u);
+const exams=u=>state.exams.filter(x=>x.u===u);
+const wrongs=u=>state.wrongs.filter(x=>x.u===u);
+const studyDates=u=>new Set([...readings(u).map(x=>x.d),...exams(u).map(x=>x.d)]);
+function dday(u){let s=state.settings[u].examDate;if(!s)return '시험일 미설정';let a=new Date(today()),b=new Date(s),n=Math.round((b-a)/864e5);return n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n)}
+function week(u){let now=new Date(),day=now.getDay()||7,mon=new Date(now);mon.setDate(now.getDate()-day+1);let ds=[];for(let i=0;i<7;i++){let d=new Date(mon);d.setDate(mon.getDate()+i);ds.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`)}let set=studyDates(u),done=ds.filter(d=>set.has(d)).length,goal=state.settings[u].weeklyGoal||4,mm=ds.reduce((s,d)=>s+mins(u,d),0);return{done,goal,pct:Math.round(done/goal*100),mm}}
+function home(u){
+ let w=week(u),r=readings(u),e=exams(u),wr=wrongs(u),rt=r.reduce((s,x)=>s+x.count,0),latest=e[e.length-1],rate=latest?Math.round(latest.correct/latest.total*1000)/10:'-';
+ return `<div class="top"><div class="meta">컴활 1급 · 필기</div><h1>${names[u]} <span style="float:right;font-size:13px">${dday(u)}</span></h1></div><div class="content">
+ <div class="card today"><div class="date">${today()}</div><b>오늘의 공부</b><div class="minutes">${fmt(mins(u))}</div>
+ <div class="row"><span>회독</span><button class="btn" onclick="openM('reading')">+ 기록</button></div>
+ <div class="row"><span>기출</span><button class="btn" onclick="openM('exam')">+ 기록</button></div>
+ <div class="row"><span>오답</span><button class="btn" onclick="openM('wrong')">+ 등록</button></div>
+ <div class="row"><span>오늘 총 공부시간</span><button class="btn" onclick="openM('minutes')">시간 설정</button></div></div>
+ <div class="card"><div class="title">이번 주</div><div style="font-size:22px;font-weight:800">${w.done} / ${w.goal}회</div><div class="progress"><div class="fill" style="width:${Math.min(100,w.pct)}%"></div></div><div class="sub" style="margin-top:8px">달성률 ${w.pct}% · ${fmt(w.mm)}</div></div>
+ <div class="card"><div class="title">누적 현황</div><div class="grid">
+ <div class="stat"><span class="sub">회독</span><strong>${rt}회</strong></div><div class="stat"><span class="sub">최근 기출</span><strong>${rate}${rate==='-'?'':'%'}</strong></div>
+ <div class="stat"><span class="sub">오답</span><strong>${wr.length}개</strong></div><div class="stat"><span class="sub">누적 공부시간</span><strong>${fmt(state.minutes.filter(x=>x.u===u).reduce((s,x)=>s+x.m,0))}</strong></div></div></div>
+ <div class="card"><div class="title">설정</div><div class="field"><label>필기 시험일</label><input type="date" id="examDate" value="${state.settings[u].examDate||''}"></div><div class="field"><label>주간 목표 횟수</label><input type="number" id="goal" min="1" max="7" value="${state.settings[u].weeklyGoal||4}"></div><button class="btn primary" onclick="saveSettings()">설정 저장</button></div>
+ </div>`;
+}
+function together(){let a=week('hana'),b=week('hyung');return `<div class="top"><div class="meta">컴활 1급</div><h1>우리의 합격 프로젝트</h1></div><div class="content"><div class="card"><div class="title">이번 주 비교</div><div class="row"><b>유하나</b><span>${a.done}/${a.goal}회 · ${fmt(a.mm)}</span></div><div class="row"><b>박형용</b><span>${b.done}/${b.goal}회 · ${fmt(b.mm)}</span></div></div><div class="card"><div class="title">누적 기록</div><div class="row"><b>유하나</b><span>회독 ${readings('hana').reduce((s,x)=>s+x.count,0)} · 기출 ${exams('hana').length} · 오답 ${wrongs('hana').length}</span></div><div class="row"><b>박형용</b><span>회독 ${readings('hyung').reduce((s,x)=>s+x.count,0)} · 기출 ${exams('hyung').length} · 오답 ${wrongs('hyung').length}</span></div></div></div>`}
+function render(){document.getElementById('app').innerHTML=(tab==='together'?together():home(tab))+`<div class="tabs"><button class="${tab==='hana'?'on':''}" onclick="go('hana')">유하나</button><button class="${tab==='together'?'on':''}" onclick="go('together')">같이보기</button><button class="${tab==='hyung'?'on':''}" onclick="go('hyung')">박형용</button></div>`+(modal||'')}
+window.go=t=>{tab=t;modal=null;render()}
+window.openM=t=>{if(tab==='together')return;let body='';
+ if(t==='reading')body=`<h3>회독 기록</h3><div class="field"><label>과목</label><select id="subj">${subjects.map(s=>`<option>${s}</option>`).join('')}</select></div><div class="field"><label>횟수</label><input id="count" type="number" min="1" value="1"></div><button class="btn primary" onclick="saveReading()">저장</button>`;
+ if(t==='exam')body=`<h3>기출 기록</h3><div class="field"><label>연도</label><input id="year" type="number" value="${new Date().getFullYear()-2}"></div><div class="field"><label>회차</label><input id="round" type="number" value="1"></div><div class="field"><label>총 문제</label><input id="total" type="number" value="60"></div><div class="field"><label>정답 수</label><input id="correct" type="number"></div><button class="btn primary" onclick="saveExam()">저장</button>`;
+ if(t==='wrong')body=`<h3>오답 등록</h3><div class="field"><label>문제번호</label><input id="q" placeholder="예: 12"></div><div class="field"><label>과목</label><select id="wsubj">${subjects.slice(1).map(s=>`<option>${s}</option>`).join('')}</select></div><div class="field"><label>메모</label><textarea id="memo"></textarea></div><button class="btn primary" onclick="saveWrong()">저장</button>`;
+ if(t==='minutes')body=`<h3>공부시간 설정</h3><div class="field"><label>분</label><input id="mm" type="number" min="0" value="${mins(tab)}"></div><button class="btn primary" onclick="saveMinutes()">저장</button>`;
+ modal=`<div class="modal" onclick="if(event.target===this)closeM()"><div class="sheet">${body}<button class="btn outline" style="width:100%;margin-top:8px" onclick="closeM()">닫기</button></div></div>`;render()}
+window.closeM=()=>{modal=null;render()}
+window.saveReading=()=>{state.readings.push({u:tab,d:today(),subject:document.getElementById('subj').value,count:+document.getElementById('count').value||1});save();closeM()}
+window.saveExam=()=>{let total=+document.getElementById('total').value||60,correct=+document.getElementById('correct').value||0;state.exams.push({u:tab,d:today(),year:+document.getElementById('year').value,round:+document.getElementById('round').value,total,correct});save();closeM()}
+window.saveWrong=()=>{state.wrongs.push({u:tab,d:today(),question:document.getElementById('q').value,subject:document.getElementById('wsubj').value,memo:document.getElementById('memo').value});save();closeM()}
+window.saveMinutes=()=>{let x=state.minutes.find(x=>x.u===tab&&x.d===today()),m=Math.max(0,+document.getElementById('mm').value||0);x?x.m=m:state.minutes.push({u:tab,d:today(),m});save();closeM()}
+window.saveSettings=()=>{state.settings[tab].examDate=document.getElementById('examDate').value;state.settings[tab].weeklyGoal=Math.max(1,Math.min(7,+document.getElementById('goal').value||4));save();render()}
+render();
+})();
+</script></body></html>
